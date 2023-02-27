@@ -25,11 +25,9 @@ class GlauthOperatorCharm(CharmBase):
 
         # Observe common Juju events
         self.framework.observe(self.on.install, self._install)
-        self.framework.observe(self.on.upgrade_charm, self._upgrade_charm)
-        self.framework.observe(self.on.start, self._start)
-        self.framework.observe(self.on.config_changed, self._config_changed)
         self.framework.observe(self.on.remove, self._remove)
         self.framework.observe(self.on.update_status, self._update_status)
+        self.framework.observe(self.on.upgrade_charm, self._upgrade_charm)
 
         # Integrations
         self.framework.observe(self.on.glauth_relation_changed, self._on_glauth_relation_changed)
