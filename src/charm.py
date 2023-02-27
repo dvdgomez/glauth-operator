@@ -7,7 +7,6 @@ import logging
 
 from charms.operator_libs_linux.v1 import snap
 from glauth import Glauth
-import ops
 from ops.charm import CharmBase
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus

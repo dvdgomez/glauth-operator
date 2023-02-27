@@ -5,7 +5,7 @@
 """Test default charm events such as upgrade charm, install, etc."""
 
 import unittest
-from unittest.mock import patch, PropertyMock
+from unittest.mock import PropertyMock, patch
 
 from charm import GlauthOperatorCharm
 from ops.model import ActiveStatus
