@@ -4,7 +4,8 @@
 """Provides glauth class to control glauth."""
 
 import logging
-from subprocess import check_output
+import shlex
+import subprocess
 
 from charms.operator_libs_linux.v1 import snap
 
@@ -43,8 +44,14 @@ class Glauth:
     def version(self) -> str:
         """Report the version of glauth currently installed."""
         if self.installed:
-            results = check_output(["glauth", "--version"]).decode()
-            return results
+            # Version separated by newlines includes version, build time and commit hash
+            # split by newlines, grab first line, grab second string for version
+            version = (
+                subprocess.run(shlex.split("glauth --version"), stdout=subprocess.PIPE, text=True)
+                .stdout.split("\n")[0]
+                .split()[1]
+            )
+            return version
         raise snap.SnapError("glauth snap not installed, cannot fetch version")
 
     @property
