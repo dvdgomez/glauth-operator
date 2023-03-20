@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
+
 """Provides glauth class to control glauth."""
 
 import logging
-import shlex
 import subprocess
 
 from charms.operator_libs_linux.v1 import snap
@@ -46,12 +46,10 @@ class Glauth:
         if self.installed:
             # Version separated by newlines includes version, build time and commit hash
             # split by newlines, grab first line, grab second string for version
-            version = (
-                subprocess.run(shlex.split("glauth --version"), stdout=subprocess.PIPE, text=True)
-                .stdout.split("\n")[0]
-                .split()[1]
-            )
-            return version
+            full_version = subprocess.run(
+                ["glauth", "--version"], stdout=subprocess.PIPE, text=True
+            ).stdout.splitlines()[0]
+            return full_version.split()[1]
         raise snap.SnapError("glauth snap not installed, cannot fetch version")
 
     @property

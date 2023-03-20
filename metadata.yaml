@@ -1,5 +1,5 @@
-name: glauth-operator
-display-name: glauth-operator
+name: glauth
+display-name: GLAuth Operator
 description: Glauth operator for lightweight LDAP server.
 summary: |
   This operator is responsible for setting up a lightweight server

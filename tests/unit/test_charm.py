@@ -7,7 +7,7 @@
 import unittest
 from unittest.mock import PropertyMock, patch
 
-from charm import GlauthOperatorCharm
+from charm import GlauthCharm
 from ops.model import ActiveStatus
 from ops.testing import Harness
 
@@ -17,7 +17,7 @@ class TestCharm(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up unit test."""
-        self.harness = Harness(GlauthOperatorCharm)
+        self.harness = Harness(GlauthCharm)
         self.addCleanup(self.harness.cleanup)
         self.harness.begin()
 

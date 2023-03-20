@@ -14,7 +14,7 @@ from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
 logger = logging.getLogger(__name__)
 
 
-class GlauthOperatorCharm(CharmBase):
+class GlauthCharm(CharmBase):
     """Charmed Operator to deploy glauth - a lightweight LDAP server."""
 
     def __init__(self, *args):
@@ -64,4 +64,4 @@ class GlauthOperatorCharm(CharmBase):
 
 
 if __name__ == "__main__":  # pragma: nocover
-    main(GlauthOperatorCharm)
+    main(GlauthCharm)

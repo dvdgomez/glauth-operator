@@ -1,1 +1,0 @@
-"""GLAuth Operator Python Module."""
