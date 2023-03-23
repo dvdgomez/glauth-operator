@@ -12,38 +12,11 @@ from charms.operator_libs_linux.v1 import snap
 logger = logging.getLogger(__name__)
 
 
-class Glauth:
-    """Provide glauth charm all functionality needed."""
-
-    def install(self):
-        """Install glauth snap."""
-        try:
-            # Change to stable once stable is released
-            self._snap.ensure(snap.SnapState.Latest, channel="edge")
-            snap.hold_refresh()
-        except snap.SnapError as e:
-            logger.error("could not install glauth. Reason: %s", e.message)
-            logger.debug(e, exc_info=True)
-            raise e
-
-    def refresh(self):
-        """Refresh the glauth snap if there is a new revision."""
-        # The operation here is exactly the same, so just call the install method
-        self.install()
-
-    def remove(self):
-        """Remove the glauth snap, preserving config and data."""
-        self._snap.ensure(snap.SnapState.Absent)
-
-    @property
-    def installed(self):
-        """Report if the glauth snap is installed."""
-        return self._snap.present
-
-    @property
-    def version(self) -> str:
-        """Report the version of glauth currently installed."""
-        if self.installed:
+def __getattr__(prop: str):
+    if prop == "installed":
+        return _snap().present
+    elif prop == "version":
+        if _snap().present:
             # Version separated by newlines includes version, build time and commit hash
             # split by newlines, grab first line, grab second string for version
             full_version = subprocess.run(
@@ -51,9 +24,32 @@ class Glauth:
             ).stdout.splitlines()[0]
             return full_version.split()[1]
         raise snap.SnapError("glauth snap not installed, cannot fetch version")
+    raise AttributeError(f"Module {__name__!r} has no property {prop!r}")
 
-    @property
-    def _snap(self):
-        """Return a representation of the glauth snap."""
-        cache = snap.SnapCache()
-        return cache["glauth"]
+
+def _snap():
+    cache = snap.SnapCache()
+    return cache["glauth"]
+
+
+def install():
+    """Install glauth snap."""
+    try:
+        # Change to stable once stable is released
+        _snap().ensure(snap.SnapState.Latest, channel="edge")
+        snap.hold_refresh()
+    except snap.SnapError as e:
+        logger.error("could not install glauth. Reason: %s", e.message)
+        logger.debug(e, exc_info=True)
+        raise e
+
+
+def refresh():
+    """Refresh the glauth snap if there is a new revision."""
+    # The operation here is exactly the same, so just call the install method
+    install()
+
+
+def remove():
+    """Remove the glauth snap, preserving config and data."""
+    _snap().ensure(snap.SnapState.Absent)

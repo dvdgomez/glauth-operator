@@ -5,8 +5,8 @@
 
 import logging
 
+import glauth
 from charms.operator_libs_linux.v1 import snap
-from glauth import Glauth
 from ops.charm import CharmBase
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
@@ -19,7 +19,7 @@ class GlauthCharm(CharmBase):
 
     def __init__(self, *args):
         super().__init__(*args)
-        self.glauth = Glauth()
+        self.glauth = glauth
 
         # Observe common Juju events
         self.framework.observe(self.on.install, self._install)

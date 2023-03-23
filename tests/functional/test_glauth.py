@@ -8,7 +8,7 @@ import subprocess
 import unittest
 from pathlib import Path
 
-from glauth import Glauth
+import glauth
 
 
 class TestGlauth(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestGlauth(unittest.TestCase):
 
     def setUp(self) -> None:
         """Install glauth snap."""
-        self.glauth = Glauth()
+        self.glauth = glauth
         if not self.glauth.installed:
             self.glauth.install()
 
