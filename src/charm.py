@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Copyright 2023 Canonical Ltd.
 # See LICENSE file for licensing details.
+
 """GLAuth Operator Charm."""
 
 import logging
@@ -38,7 +39,7 @@ class GlauthCharm(CharmBase):
             self.unit.set_workload_version(self.glauth.version)
             self.unit.status = ActiveStatus("glauth ready")
         except snap.SnapError as e:
-            self.unit.status = BlockedStatus(str(e))
+            self.unit.status = BlockedStatus(e.message)
 
     def _on_glauth_relation_changed(self, _):
         self.unit.status = MaintenanceStatus("reconfiguring glauth")
@@ -59,7 +60,7 @@ class GlauthCharm(CharmBase):
         try:
             self.glauth.refresh()
         except snap.SnapError as e:
-            self.unit.status = BlockedStatus(str(e))
+            self.unit.status = BlockedStatus(e.message)
 
 
 if __name__ == "__main__":  # pragma: nocover
