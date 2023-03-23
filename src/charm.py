@@ -20,7 +20,6 @@ class GlauthCharm(CharmBase):
 
     def __init__(self, *args):
         super().__init__(*args)
-        self.glauth = glauth
 
         # Observe common Juju events
         self.framework.observe(self.on.install, self._install)
@@ -35,8 +34,8 @@ class GlauthCharm(CharmBase):
         """Install glauth."""
         self.unit.status = MaintenanceStatus("installing glauth")
         try:
-            self.glauth.install()
-            self.unit.set_workload_version(self.glauth.version)
+            glauth.install()
+            self.unit.set_workload_version(glauth.version)
             self.unit.status = ActiveStatus("glauth ready")
         except snap.SnapError as e:
             self.unit.status = BlockedStatus(e.message)
@@ -47,18 +46,18 @@ class GlauthCharm(CharmBase):
     def _remove(self, _):
         """Remove glauth from the machine."""
         self.unit.status = MaintenanceStatus("removing glauth")
-        self.glauth.remove()
+        glauth.remove()
 
     def _update_status(self, _):
         """Update status."""
         snap.hold_refresh()
-        self.unit.set_workload_version(self.glauth.version)
+        self.unit.set_workload_version(glauth.version)
 
     def _upgrade_charm(self, _):
         """Ensure the snap is refreshed (in channel) if there are new revisions."""
         self.unit.status = MaintenanceStatus("refreshing glauth")
         try:
-            self.glauth.refresh()
+            glauth.refresh()
         except snap.SnapError as e:
             self.unit.status = BlockedStatus(e.message)
 
