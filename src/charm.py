@@ -18,7 +18,6 @@ class GlauthCharm(CharmBase):
     """Charmed Operator to deploy glauth - a lightweight LDAP server."""
 
     def __init__(self, *args):
-        """Init observe charm and glauth events."""
         super().__init__(*args)
         self.glauth = Glauth()
 
