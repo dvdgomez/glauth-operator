@@ -9,5 +9,5 @@ summary: |
   with configurable backends.
 
 provides:
-  glauth:
-    interface: glauth
+  sssd-ldap:
+    interface: sssd-ldap

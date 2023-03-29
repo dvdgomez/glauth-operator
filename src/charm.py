@@ -8,7 +8,7 @@ import logging
 
 import glauth
 from charms.operator_libs_linux.v1 import snap
-from ops.charm import CharmBase
+from ops.charm import CharmBase, RelationJoinedEvent
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
 
@@ -28,7 +28,7 @@ class GlauthCharm(CharmBase):
         self.framework.observe(self.on.upgrade_charm, self._upgrade_charm)
 
         # Integrations
-        self.framework.observe(self.on.glauth_relation_changed, self._on_glauth_relation_changed)
+        self.framework.observe(self.on.sssd_ldap_relation_joined, self._on_sssd_ldap_relation_joined)
 
     def _install(self, _):
         """Install glauth."""
@@ -40,8 +40,24 @@ class GlauthCharm(CharmBase):
         except snap.SnapError as e:
             self.unit.status = BlockedStatus(e.message)
 
-    def _on_glauth_relation_changed(self, _):
+    def _on_sssd_ldap_relation_joined(self, event: RelationJoinedEvent):
         self.unit.status = MaintenanceStatus("reconfiguring glauth")
+        # Get CA Cert from GLAuth Snap
+        ca_cert = glauth.load()
+        # GLAuth Configuration to send
+        config = glauth.get_config()
+        content = {"ca-cert": ca_cert, "password": config["password"]}
+        # Create Secret
+        secret = self.app.add_secret(content, label="trusted-entity")
+        logger.debug("created secret %s", secret)
+        secret.grant(event.relation)
+        event.relation.data[self.app]['trusted-entity'] = secret.id
+        # Configuration data update
+        ldap_relation = self.model.get_relation("sssd-ldap")
+        ldap_relation.data[self.app].update(
+            {"domain": config["domain"], "ldap-uri": config["ldap-uri"]}
+        )
+        self.unit.status = ActiveStatus("glauth ready")
 
     def _remove(self, _):
         """Remove glauth from the machine."""
