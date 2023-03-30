@@ -28,7 +28,7 @@ class GlauthCharm(CharmBase):
         self.framework.observe(self.on.upgrade_charm, self._upgrade_charm)
 
         # Integrations
-        self.framework.observe(self.on.sssd_ldap_relation_joined, self._on_sssd_ldap_relation_joined)
+        self.framework.observe(self.on.ldap_client_relation_joined, self._on_ldap_client_relation_joined)
 
     def _install(self, _):
         """Install glauth."""
@@ -40,22 +40,39 @@ class GlauthCharm(CharmBase):
         except snap.SnapError as e:
             self.unit.status = BlockedStatus(e.message)
 
-    def _on_sssd_ldap_relation_joined(self, event: RelationJoinedEvent):
+    def _on_ldap_client_relation_joined(self, event: RelationJoinedEvent):
+        """Handle ldap-client relation joined event."""
         self.unit.status = MaintenanceStatus("reconfiguring glauth")
         # Get CA Cert from GLAuth Snap
         ca_cert = glauth.load()
-        # GLAuth Configuration to send
-        config = glauth.get_config()
-        content = {"ca-cert": ca_cert, "password": config["password"]}
-        # Create Secret
-        secret = self.app.add_secret(content, label="trusted-entity")
-        logger.debug("created secret %s", secret)
-        secret.grant(event.relation)
-        event.relation.data[self.app]['trusted-entity'] = secret.id
+        # GLAuth URI to send
+        ldap_uri = glauth.get_uri()
+        cc_content = {
+            "ca-cert": ca_cert
+        }
+        ldbd_content = {
+            "ldap-default-bind-dn": self.model.config["ldap-default-bind-dn"]
+        }
+        lp_content = {
+            "ldap-password": self.model.config["ldap-password"]
+        }
+        # Create Secrets
+        cc_secret = self.app.add_secret(cc_content, label="ca-cert")
+        logger.debug("created secret %s", cc_secret)
+        ldbd_secret = self.app.add_secret(ldbd_content, label="ldap-default-bind-dn")
+        logger.debug("created secret %s", ldbd_secret)
+        lp_secret = self.app.add_secret(lp_content, label="ldap-password")
+        logger.debug("created secret %s", lp_secret)
+        cc_secret.grant(event.relation)
+        ldbd_secret.grant(event.relation)
+        lp_secret.grant(event.relation)
+        event.relation.data[self.app]["ca-cert"] = cc_secret.id
+        event.relation.data[self.app]["ldap-default-bind-dn"] = ldbd_secret.id
+        event.relation.data[self.app]["ldap-password"] = lp_secret.id
         # Configuration data update
-        ldap_relation = self.model.get_relation("sssd-ldap")
+        ldap_relation = self.model.get_relation("ldap-client")
         ldap_relation.data[self.app].update(
-            {"domain": config["domain"], "ldap-uri": config["ldap-uri"]}
+            {"basedn": self.model.config["ldap-search-base"], "domain": self.model.config["domain"], "ldap-uri": ldap_uri}
         )
         self.unit.status = ActiveStatus("glauth ready")
 

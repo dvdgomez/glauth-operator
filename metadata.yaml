@@ -9,5 +9,5 @@ summary: |
   with configurable backends.
 
 provides:
-  sssd-ldap:
-    interface: sssd-ldap
+  ldap-client:
+    interface: ldap-client

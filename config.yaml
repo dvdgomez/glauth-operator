@@ -1,0 +1,20 @@
+# Copyright 2023 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+options:
+  domain:
+    description: LDAP domain.
+    type: string
+    default: 
+  ldap-default-bind-dn:
+    description: Default bind DN for LDAP operations.
+    type: string
+    default:
+  ldap-password:
+    description: LDAP password.
+    type: string
+    default:
+  ldap-search-base:
+    description: Default base DN for ldap operations.
+    type: string
+    default:

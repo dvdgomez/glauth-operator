@@ -6,8 +6,6 @@
 
 import logging
 import subprocess
-import toml
-from typing import Dict
 
 from charms.operator_libs_linux.v1 import snap
 
@@ -34,23 +32,15 @@ def _snap():
     return cache["glauth"]
 
 
-def get_config() -> Dict:
-    """Get configuration.
+def get_uri() -> str:
+    """Get GLAuth config.
     
     Returns:
-      GLAuth snap configuration in a dictionary.
+      Glauth config dictionary.
     """
-    with open("/var/snap/glauth/common/etc/glauth/glauth.d/sample-simple.cfg", "r") as f:
-        config = toml.load(f)
-    # Get domains
-    domain = config["backend"]["baseDN"]
     # Get ldap_uri
     ldap_uri = subprocess.run(["cat", "/etc/hostname"], capture_output=True, text=True).stdout.strip()
-    return {
-        "domain": domain,
-        "ldap-uri": ldap_uri,
-        "password": "mysecret"
-        }
+    return ldap_uri
 
 
 def install():
