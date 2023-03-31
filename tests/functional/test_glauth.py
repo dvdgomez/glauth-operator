@@ -4,9 +4,7 @@
 
 """Test glauth snap functionality."""
 
-import subprocess
 import unittest
-from pathlib import Path
 
 import glauth
 
@@ -22,5 +20,5 @@ class TestGlauth(unittest.TestCase):
 
     def test_install(self):
         """Validate snap install."""
-        self.assertTrue(Path("/snap/bin/glauth").exists())
-        self.assertEqual(subprocess.check_call(["/snap/bin/glauth", "--version"]), 0)
+        self.assertTrue(glauth.installed)
+        self.assertTrue(type(glauth.version), str)

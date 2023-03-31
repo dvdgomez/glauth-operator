@@ -28,7 +28,9 @@ class GlauthCharm(CharmBase):
         self.framework.observe(self.on.upgrade_charm, self._upgrade_charm)
 
         # Integrations
-        self.framework.observe(self.on.ldap_client_relation_joined, self._on_ldap_client_relation_joined)
+        self.framework.observe(
+            self.on.ldap_client_relation_joined, self._on_ldap_client_relation_joined
+        )
 
     def _install(self, _):
         """Install glauth."""
@@ -47,15 +49,9 @@ class GlauthCharm(CharmBase):
         ca_cert = glauth.load()
         # GLAuth URI to send
         ldap_uri = glauth.get_uri()
-        cc_content = {
-            "ca-cert": ca_cert
-        }
-        ldbd_content = {
-            "ldap-default-bind-dn": self.model.config["ldap-default-bind-dn"]
-        }
-        lp_content = {
-            "ldap-password": self.model.config["ldap-password"]
-        }
+        cc_content = {"ca-cert": ca_cert}
+        ldbd_content = {"ldap-default-bind-dn": self.model.config["ldap-default-bind-dn"]}
+        lp_content = {"ldap-password": self.model.config["ldap-password"]}
         # Create Secrets
         cc_secret = self.app.add_secret(cc_content, label="ca-cert")
         logger.debug("created secret %s", cc_secret)
@@ -72,7 +68,11 @@ class GlauthCharm(CharmBase):
         # Configuration data update
         ldap_relation = self.model.get_relation("ldap-client")
         ldap_relation.data[self.app].update(
-            {"basedn": self.model.config["ldap-search-base"], "domain": self.model.config["domain"], "ldap-uri": ldap_uri}
+            {
+                "basedn": self.model.config["ldap-search-base"],
+                "domain": self.model.config["domain"],
+                "ldap-uri": ldap_uri,
+            }
         )
         self.unit.status = ActiveStatus("glauth ready")
 

@@ -34,12 +34,14 @@ def _snap():
 
 def get_uri() -> str:
     """Get GLAuth config.
-    
+
     Returns:
       Glauth config dictionary.
     """
     # Get ldap_uri
-    ldap_uri = subprocess.run(["cat", "/etc/hostname"], capture_output=True, text=True).stdout.strip()
+    ldap_uri = subprocess.run(
+        ["cat", "/etc/hostname"], capture_output=True, text=True
+    ).stdout.strip()
     return ldap_uri
 
 
@@ -57,13 +59,11 @@ def install():
 
 def load() -> str:
     """Load ca-certificate from glauth snap.
-    
+
     Returns:
       The ca certificate content.
     """
-    content = open(
-            "/var/snap/glauth/common/etc/glauth/certs.d/glauth.crt", "r"
-        ).read()
+    content = open("/var/snap/glauth/common/etc/glauth/certs.d/glauth.crt", "r").read()
     return content
 
 
