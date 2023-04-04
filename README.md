@@ -10,13 +10,16 @@ that it can be integrated with other Juju charms in a model.
 You can deploy the operator as such:
 
 ```shell
-# Deploy the charm
+# Deploy the charm with a resource
+$ juju deploy glauth --channel edge --resource config=config.zip
+
+# Deploy the charm with no resource
 $ juju deploy glauth --channel edge
 ```
 
 ## Configuration
 
-In order for glauth to properly integrate with other charms its LDAP configuration must be configured.
+In order for glauth to properly integrate with SSSD its configuration must be configured.
 
 ```shell
 # LDAP domain
@@ -31,6 +34,8 @@ juju config glauth ldap-password=mysecret
 # ldap_search_base
 juju config glauth ldap-search-base=dc=glauth,dc=com
 ```
+
+The GLAuth configuration can be passed in as a resource in a *.zip. If no resource is used then a default configuration is created with no users. 
 
 ## Integrations
 
