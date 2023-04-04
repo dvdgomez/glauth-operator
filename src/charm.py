@@ -10,7 +10,7 @@ import glauth
 from charms.operator_libs_linux.v1 import snap
 from ops.charm import CharmBase, RelationJoinedEvent
 from ops.main import main
-from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
+from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, ModelError
 
 logger = logging.getLogger(__name__)
 
@@ -45,10 +45,17 @@ class GlauthCharm(CharmBase):
     def _on_ldap_client_relation_joined(self, event: RelationJoinedEvent):
         """Handle ldap-client relation joined event."""
         self.unit.status = MaintenanceStatus("reconfiguring glauth")
-        # Get CA Cert from GLAuth Snap
-        ca_cert = glauth.load()
+        # Check model for GLAuth config resource
+        try:
+            resource_path = self.model.resources.fetch("config")
+        except ModelError:
+            logger.debug("No config resource supplied")
+            resource_path = None
+        glauth.set_config(resource_path)
         # GLAuth URI to send
         ldap_uri = glauth.get_uri()
+        # Get CA Cert from GLAuth Snap
+        ca_cert = glauth.load(self.model.config["cert"], self.model.config["key"], ldap_uri)
         cc_content = {"ca-cert": ca_cert}
         ldbd_content = {"ldap-default-bind-dn": self.model.config["ldap-default-bind-dn"]}
         lp_content = {"ldap-password": self.model.config["ldap-password"]}

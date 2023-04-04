@@ -2,6 +2,18 @@
 # See LICENSE file for licensing details.
 
 options:
+  cert:
+    description: Certificate filepath.
+    type: string
+    default: "/var/snap/glauth/common/etc/glauth/certs.d/glauth.crt"
+  config:
+    description: Configuration directory for GLAuth.
+    type: string
+    default: "/var/snap/glauth/common/etc/glauth/glauth.d"
+  key:
+    description: Key filepath.
+    type: string
+    default: "/var/snap/glauth/common/etc/glauth/keys.d/glauth.key"
   domain:
     description: LDAP domain.
     type: string
