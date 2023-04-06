@@ -52,11 +52,12 @@ class GlauthCharm(CharmBase):
         except ModelError:
             logger.debug("No config resource supplied")
             resource_path = None
-        glauth.set_config(resource_path)
-        # GLAuth URI to send
-        ldap_uri = glauth.get_uri()
+        # Set config and get LDAP URI
+        ldap_uri = glauth.set_config(
+            resource_path, self.model.config["ldap-port"], self.model.config["api-port"]
+        )
         # Get CA Cert and key
-        ca_cert = glauth.load(ldap_uri)
+        ca_cert = glauth.load()
         cc_content = {"ca-cert": ca_cert}
         # Get Peer Secrets
         ldap_relation = self.model.get_relation("glauth")

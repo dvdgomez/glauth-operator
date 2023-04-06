@@ -11,6 +11,7 @@ import subprocess
 import zipfile
 
 from charms.operator_libs_linux.v1 import snap
+from jinja2 import Template
 
 logger = logging.getLogger(__name__)
 
@@ -32,40 +33,26 @@ def __getattr__(prop: str):
     raise AttributeError(f"Module {__name__!r} has no property {prop!r}")
 
 
-def _create_default_config() -> None:
+def _create_default_config(ldap_port: int, api_port: int) -> None:
     """Create default config with no users."""
-    default = (
-        "#################\n"
-        "# General configuration.\n"
-        "debug = true\n"
-        "\n"
-        "#################\n"
-        "# Server configuration.\n"
-        "[ldap]\n"
-        "enabled = true\n"
-        'listen = "0.0.0.0:3893"\n'
-        "\n"
-        "[behaviors]\n"
-        "IgnoreCapabilities = false\n"
-        "LimitFailedBinds = true\n"
-        "NumberOfFailedBinds = 3\n"
-        "PeriodOfFailedBinds = 10\n"
-        "BlockFailedBindsFor = 60\n"
-        "PruneSourceTableEvery = 600\n"
-        "PruneSourcesOlderThan = 600\n"
-        "\n"
-        "#################\n"
-        "\n"
-        "[api]\n"
-        "enabled = true\n"
-        "internals = true\n"
-        "tls = false\n"
-        'listen = "0.0.0.0:5555"\n'
-        'cert = "cert.pem"\n'
-        'key = "key.pem"\n'
-    )
+    with open("templates/glauth.toml.j2", "r") as f:
+        template = Template(f.read())
+
+    rendered = template.render(ldap_port=ldap_port, api_port=api_port)
     with open("/var/snap/glauth/common/etc/glauth/glauth.d/glauth.cfg", "w") as f:
-        f.write(default)
+        f.write(rendered)
+
+
+def _get_hostname() -> str:
+    """Get GLAuth hostname.
+
+    Returns:
+      GLAuth hostname.
+    """
+    hostname = subprocess.run(
+        ["cat", "/etc/hostname"], capture_output=True, text=True
+    ).stdout.strip()
+    return hostname
 
 
 def _snap():
@@ -73,31 +60,28 @@ def _snap():
     return cache["glauth"]
 
 
-def set_config(config: pathlib.Path) -> None:
+def set_config(config: pathlib.Path, ldap_port: int, api_port: int) -> str:
     """Set GLAuth config resource. Create default if none found.
 
     Args:
       config: Resource config Path object.
+      ldap_port: LDAP port for default config.
+      api_port: API port for default config.
+
+
+    Returns:
+      LDAP URI.
     """
+    ldap_uri = "ldap"
     # Create default config with no users if resource glauth.cfg not found
     if config is None:
-        _create_default_config()
+        _create_default_config(ldap_port, api_port)
+        ldap_uri = ldap_uri + f"://{_get_hostname()}:{ldap_port}"
     # Zip file of multiple configs
     else:
         with zipfile.ZipFile(config, "r") as zip:
             zip.extractall("/var/snap/glauth/common/etc/glauth/glauth.d/")
-
-
-def get_uri() -> str:
-    """Get GLAuth config.
-
-    Returns:
-      Glauth config dictionary.
-    """
-    # Get ldap_uri
-    ldap_uri = subprocess.run(
-        ["cat", "/etc/hostname"], capture_output=True, text=True
-    ).stdout.strip()
+        ldap_uri = ldap_uri + f"s://{_get_hostname()}:{ldap_port}"
     return ldap_uri
 
 
@@ -113,11 +97,8 @@ def install() -> None:
         raise e
 
 
-def load(ldap_uri: str) -> str:
+def load() -> str:
     """Load ca-certificate from glauth snap.
-
-    Args:
-      ldap_uri: LDAP URI.
 
     Returns:
       The ca certificate content.
@@ -128,7 +109,7 @@ def load(ldap_uri: str) -> str:
         # If cert and key do not exist, create both
         subprocess.run(
             shlex.split(
-                f'openssl req -x509 -newkey rsa:4096 -keyout {key} -out {cert} -days 365 -nodes -subj "/CN={ldap_uri}"'
+                f'openssl req -x509 -newkey rsa:4096 -keyout {key} -out {cert} -days 365 -nodes -subj "/CN={_get_hostname()}"'
             )
         )
     # Start and enable Snap now that config, cert, and key are available

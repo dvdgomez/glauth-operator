@@ -1,0 +1,28 @@
+#################
+# General configuration.
+debug = true
+
+#################
+# Server configuration.
+[ldap]
+enabled = true
+listen = "0.0.0.0:{{ ldap_port }}"
+
+[behaviors]
+IgnoreCapabilities = false
+LimitFailedBinds = true
+NumberOfFailedBinds = 3
+PeriodOfFailedBinds = 10
+BlockFailedBindsFor = 60
+PruneSourceTableEvery = 600
+PruneSourcesOlderThan = 600
+
+#################
+
+[api]
+enabled = true
+internals = true
+tls = false
+listen = "0.0.0.0:{{ api_port }}"
+cert = "cert.pem"
+key = "key.pem"

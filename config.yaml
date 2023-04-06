@@ -2,10 +2,18 @@
 # See LICENSE file for licensing details.
 
 options:
+  api-port:
+    description: Default API port for glauth config.
+    type: int
+    default: 5555
   domain:
     description: LDAP domain.
     type: string
-    default: 
+    default:
+  ldap-port:
+    description: Default LDAP port for glauth config.
+    type: int
+    default: 3893
   ldap-search-base:
     description: Default base DN for ldap operations.
     type: string
