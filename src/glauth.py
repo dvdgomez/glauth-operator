@@ -113,17 +113,17 @@ def install() -> None:
         raise e
 
 
-def load(cert: str, key: str, ldap_uri: str) -> str:
+def load(ldap_uri: str) -> str:
     """Load ca-certificate from glauth snap.
 
     Args:
-      cert: Certificate filepath.
-      key:  Key filepath.
       ldap_uri: LDAP URI.
 
     Returns:
       The ca certificate content.
     """
+    cert = "/var/snap/glauth/common/etc/glauth/certs.d/glauth.crt"
+    key = "/var/snap/glauth/common/etc/glauth/keys.d/glauth.key"
     if not pathlib.Path(cert).exists() and not pathlib.Path(key).exists():
         # If cert and key do not exist, create both
         subprocess.run(
@@ -132,7 +132,7 @@ def load(cert: str, key: str, ldap_uri: str) -> str:
             )
         )
     # Start and enable Snap now that config, cert, and key are available
-    subprocess.run(shlex.split("snap start glauth --enable"))
+    _snap().start(enable=True)
     content = open(cert, "r").read()
     return content
 

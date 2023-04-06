@@ -12,6 +12,9 @@ resources:
     type: file
     filename: config.zip
     description: GLAuth server configuration
+peers:
+  glauth:
+    interface: glauth
 provides:
   ldap-client:
     interface: ldap-client

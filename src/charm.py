@@ -26,7 +26,8 @@ class GlauthCharm(CharmBase):
         self.framework.observe(self.on.remove, self._remove)
         self.framework.observe(self.on.update_status, self._update_status)
         self.framework.observe(self.on.upgrade_charm, self._upgrade_charm)
-
+        # Actions
+        self.framework.observe(self.on.set_confidential_action, self._on_set_confidential_action)
         # Integrations
         self.framework.observe(
             self.on.ldap_client_relation_joined, self._on_ldap_client_relation_joined
@@ -54,18 +55,18 @@ class GlauthCharm(CharmBase):
         glauth.set_config(resource_path)
         # GLAuth URI to send
         ldap_uri = glauth.get_uri()
-        # Get CA Cert from GLAuth Snap
-        ca_cert = glauth.load(self.model.config["cert"], self.model.config["key"], ldap_uri)
+        # Get CA Cert and key
+        ca_cert = glauth.load(ldap_uri)
         cc_content = {"ca-cert": ca_cert}
-        ldbd_content = {"ldap-default-bind-dn": self.model.config["ldap-default-bind-dn"]}
-        lp_content = {"ldap-password": self.model.config["ldap-password"]}
+        # Get Peer Secrets
+        ldap_relation = self.model.get_relation("glauth")
+        default_bind_dn = ldap_relation.data[self.app]["ldap-default-bind-dn"]
+        ldap_password = ldap_relation.data[self.app]["ldap-password"]
+        ldbd_secret = self.model.get_secret(id=default_bind_dn)
+        lp_secret = self.model.get_secret(id=ldap_password)
         # Create Secrets
         cc_secret = self.app.add_secret(cc_content, label="ca-cert")
         logger.debug("created secret %s", cc_secret)
-        ldbd_secret = self.app.add_secret(ldbd_content, label="ldap-default-bind-dn")
-        logger.debug("created secret %s", ldbd_secret)
-        lp_secret = self.app.add_secret(lp_content, label="ldap-password")
-        logger.debug("created secret %s", lp_secret)
         cc_secret.grant(event.relation)
         ldbd_secret.grant(event.relation)
         lp_secret.grant(event.relation)
@@ -82,6 +83,19 @@ class GlauthCharm(CharmBase):
             }
         )
         self.unit.status = ActiveStatus("glauth ready")
+
+    def _on_set_confidential_action(self, event):
+        """Handle the set-confidential action."""
+        ldbd_content = {"ldap-default-bind-dn": event.params["ldap-default-bind-dn"]}
+        lp_content = {"ldap-password": event.params["ldap-password"]}
+        ldbd_secret = self.app.add_secret(ldbd_content, label="ldap-default-bind-dn")
+        logger.debug("created secret %s", "ldap-default-bind-dn")
+        lp_secret = self.app.add_secret(lp_content, label="ldap-password")
+        logger.debug("created secret %s", "ldap-password")
+        # Get peer integration to store secrets
+        ldap_relation = self.model.get_relation("glauth")
+        ldap_relation.data[self.app]["ldap-default-bind-dn"] = ldbd_secret.id
+        ldap_relation.data[self.app]["ldap-password"] = lp_secret.id
 
     def _remove(self, _):
         """Remove glauth from the machine."""

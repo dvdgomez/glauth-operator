@@ -1,0 +1,14 @@
+# Copyright 2023 Canonical Ltd.
+# See LICENSE file for licensing details.
+
+set-confidential:
+  description: |
+    Set confidential user information for GLAuth configuration.
+  params:
+    ldap-password:
+      type: string
+      description: The LDAP password.
+    ldap-default-bind-dn:
+      type: string
+      description: Default bind DN for LDAP operations.
+  required: [ldap-password, ldap-default-bind-dn]
