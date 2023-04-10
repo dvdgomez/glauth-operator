@@ -8,9 +8,10 @@ import logging
 
 import glauth
 from charms.operator_libs_linux.v1 import snap
-from ops.charm import CharmBase, RelationJoinedEvent
+from ldapclient_lib import ConfigDataUnavailableEvent, GlauthSnapReadyEvent, LdapClientProvides
+from ops.charm import CharmBase
 from ops.main import main
-from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, ModelError
+from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ class GlauthCharm(CharmBase):
 
     def __init__(self, *args):
         super().__init__(*args)
-
+        self.ldapclient = LdapClientProvides(self, "ldap-client")
         # Observe common Juju events
         self.framework.observe(self.on.install, self._install)
         self.framework.observe(self.on.remove, self._remove)
@@ -28,9 +29,14 @@ class GlauthCharm(CharmBase):
         self.framework.observe(self.on.upgrade_charm, self._upgrade_charm)
         # Actions
         self.framework.observe(self.on.set_confidential_action, self._on_set_confidential_action)
-        # Integrations
+        # LDAP Client Lib Integrations
         self.framework.observe(
-            self.on.ldap_client_relation_joined, self._on_ldap_client_relation_joined
+            self.ldapclient.on.config_data_unavailable,
+            self._on_config_data_unavailable,
+        )
+        self.framework.observe(
+            self.ldapclient.on.glauth_snap_ready,
+            self._on_glauth_snap_ready,
         )
 
     def _install(self, _):
@@ -43,47 +49,15 @@ class GlauthCharm(CharmBase):
         except snap.SnapError as e:
             self.unit.status = BlockedStatus(e.message)
 
-    def _on_ldap_client_relation_joined(self, event: RelationJoinedEvent):
-        """Handle ldap-client relation joined event."""
-        self.unit.status = MaintenanceStatus("reconfiguring glauth")
-        # Check model for GLAuth config resource
-        try:
-            resource_path = self.model.resources.fetch("config")
-        except ModelError:
-            logger.debug("No config resource supplied")
-            resource_path = None
-        # Set config and get LDAP URI
-        ldap_uri = glauth.set_config(
-            resource_path, self.model.config["ldap-port"], self.model.config["api-port"]
-        )
-        # Get CA Cert and key
-        ca_cert = glauth.load()
-        cc_content = {"ca-cert": ca_cert}
-        # Get Peer Secrets
-        ldap_relation = self.model.get_relation("glauth")
-        default_bind_dn = ldap_relation.data[self.app]["ldap-default-bind-dn"]
-        ldap_password = ldap_relation.data[self.app]["ldap-password"]
-        ldbd_secret = self.model.get_secret(id=default_bind_dn)
-        lp_secret = self.model.get_secret(id=ldap_password)
-        # Create Secrets
-        cc_secret = self.app.add_secret(cc_content, label="ca-cert")
-        logger.debug("created secret %s", cc_secret)
-        cc_secret.grant(event.relation)
-        ldbd_secret.grant(event.relation)
-        lp_secret.grant(event.relation)
-        event.relation.data[self.app]["ca-cert"] = cc_secret.id
-        event.relation.data[self.app]["ldap-default-bind-dn"] = ldbd_secret.id
-        event.relation.data[self.app]["ldap-password"] = lp_secret.id
-        # Configuration data update
-        ldap_relation = self.model.get_relation("ldap-client")
-        ldap_relation.data[self.app].update(
-            {
-                "basedn": self.model.config["ldap-search-base"],
-                "domain": self.model.config["domain"],
-                "ldap-uri": ldap_uri,
-            }
-        )
-        self.unit.status = ActiveStatus("glauth ready")
+    def _on_config_data_unavailable(self, event: ConfigDataUnavailableEvent) -> None:
+        """Handle config-data-unavailable event."""
+        # If config data is unavailable, set default config
+        glauth.create_default_config(api_port=event.api_port, ldap_port=event.ldap_port)
+
+    def _on_glauth_snap_ready(self, event: GlauthSnapReadyEvent) -> None:
+        """Handle glauth-snap-ready event."""
+        glauth.start()
+        self.unit.status = ActiveStatus("glauth active")
 
     def _on_set_confidential_action(self, event):
         """Handle the set-confidential action."""
