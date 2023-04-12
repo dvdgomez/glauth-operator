@@ -6,10 +6,6 @@ options:
     description: Default API port for glauth config.
     type: int
     default: 5555
-  domain:
-    description: LDAP domain.
-    type: string
-    default:
   ldap-port:
     description: Default LDAP port for glauth config.
     type: int
