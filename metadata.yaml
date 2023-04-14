@@ -7,14 +7,14 @@ description: Glauth operator for lightweight LDAP server.
 summary: |
   This operator is responsible for setting up a lightweight server
   with configurable backends.
-resources:
-  config:
-    type: file
-    filename: config.zip
-    description: GLAuth server configuration
 peers:
   glauth:
     interface: glauth
 provides:
   ldap-client:
     interface: ldap-client
+resources:
+  config:
+    type: file
+    filename: config.zip
+    description: GLAuth server configuration

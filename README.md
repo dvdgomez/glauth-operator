@@ -22,17 +22,14 @@ $ juju deploy glauth --channel edge
 In order for glauth to properly integrate with SSSD its configuration must be configured.
 
 ```shell
-# LDAP domain
-juju config glauth domain=MYDOMAIN
-
-# ldap_default_bind_dn
-juju config glauth ldap-default-bind-dn=cn=serviceuser,ou=svcaccts,dc=glauth,dc=com
-
-# ldap_default_authtok
-juju config glauth ldap-password=mysecret
+# LDAP port
+juju config glauth ldap-port=3894
 
 # ldap_search_base
 juju config glauth ldap-search-base=dc=glauth,dc=com
+
+# Set secrets with set-confidential action
+juju run glauth/0 set-confidential ldap-password=mysecret ldap-default-bind-dn=cn=serviceuser,ou=svcaccts,dc=glauth,dc=com
 ```
 
 The GLAuth configuration can be passed in as a resource in a *.zip. If no resource is used then a default configuration is created with no users. 

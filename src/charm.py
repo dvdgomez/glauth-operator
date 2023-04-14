@@ -21,7 +21,7 @@ class GlauthCharm(CharmBase):
 
     def __init__(self, *args):
         super().__init__(*args)
-        self.ldapclient = LdapClientProvides(self, "ldap-client")
+        self._ldapclient = LdapClientProvides(self, "ldap-client")
         # Observe common Juju events
         self.framework.observe(self.on.install, self._install)
         self.framework.observe(self.on.remove, self._remove)
@@ -31,11 +31,11 @@ class GlauthCharm(CharmBase):
         self.framework.observe(self.on.set_confidential_action, self._on_set_confidential_action)
         # LDAP Client Lib Integrations
         self.framework.observe(
-            self.ldapclient.on.config_data_unavailable,
+            self._ldapclient.on.config_data_unavailable,
             self._on_config_data_unavailable,
         )
         self.framework.observe(
-            self.ldapclient.on.glauth_snap_ready,
+            self._ldapclient.on.glauth_snap_ready,
             self._on_glauth_snap_ready,
         )
 
@@ -64,9 +64,9 @@ class GlauthCharm(CharmBase):
         ldbd_content = {"ldap-default-bind-dn": event.params["ldap-default-bind-dn"]}
         lp_content = {"ldap-password": event.params["ldap-password"]}
         ldbd_secret = self.app.add_secret(ldbd_content, label="ldap-default-bind-dn")
-        logger.debug(f"created secret {ldap-default-bind-dn}")
+        logger.debug("created secret ldap-default-bind-dn")
         lp_secret = self.app.add_secret(lp_content, label="ldap-password")
-        logger.debug(f"created secret {ldap-password}")
+        logger.debug("created secret ldap-password")
         # Get peer integration to store secrets
         ldap_relation = self.model.get_relation("glauth")
         ldap_relation.data[self.app]["ldap-default-bind-dn"] = ldbd_secret.id

@@ -5,6 +5,7 @@
 """Provides glauth class to control glauth."""
 
 import logging
+import pathlib
 import subprocess
 
 from charms.operator_libs_linux.v1 import snap
