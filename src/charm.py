@@ -64,9 +64,9 @@ class GlauthCharm(CharmBase):
         ldbd_content = {"ldap-default-bind-dn": event.params["ldap-default-bind-dn"]}
         lp_content = {"ldap-password": event.params["ldap-password"]}
         ldbd_secret = self.app.add_secret(ldbd_content, label="ldap-default-bind-dn")
-        logger.debug("created secret %s", "ldap-default-bind-dn")
+        logger.debug(f"created secret {ldap-default-bind-dn}")
         lp_secret = self.app.add_secret(lp_content, label="ldap-password")
-        logger.debug("created secret %s", "ldap-password")
+        logger.debug(f"created secret {ldap-password}")
         # Get peer integration to store secrets
         ldap_relation = self.model.get_relation("glauth")
         ldap_relation.data[self.app]["ldap-default-bind-dn"] = ldbd_secret.id
