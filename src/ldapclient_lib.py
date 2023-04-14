@@ -26,7 +26,6 @@ This library contains the Provides and Requires classes for handling the ldap-cl
 
 import logging
 import pathlib
-import shlex
 import subprocess
 import zipfile
 
@@ -42,24 +41,9 @@ from ops.model import ActiveStatus, MaintenanceStatus, ModelError
 
 logger = logging.getLogger(__name__)
 
-"""
-Events - TBD
-"""
-
-# class LdapClientProviderCharmEvents(CharmEvents):
-#    """Events the LDAP Client provider can leverage."""
-# No custom events necessary for the provider, just has to pass along
-# information to the client.
-
 
 class GlauthSnapReadyEvent(EventBase):
     """Charm Event triggered when a glauth snap is ready to start."""
-
-    def __init__(
-        self,
-        handle: Handle,
-    ):
-        super().__init__(handle)
 
 
 class CertificateAvailableEvent(EventBase):
@@ -86,8 +70,6 @@ class CertificateAvailableEvent(EventBase):
 
 class CertificateUnavailableEvent(EventBase):
     """Charm Event triggered when a CA certificate is unavailable."""
-
-    pass
 
 
 class ConfigDataAvailableEvent(EventBase):
@@ -153,21 +135,9 @@ class ConfigDataUnavailableEvent(EventBase):
 class ServerUnavailableEvent(EventBase):
     """Charm Event triggered When the LDAP server is unavailable."""
 
-    def __init__(
-        self,
-        handle: Handle,
-    ):
-        super().__init__(handle)
-
 
 class LdapReadyEvent(EventBase):
     """Charm Event triggered when LDAP is ready to start."""
-
-    def __init__(
-        self,
-        handle: Handle,
-    ):
-        super().__init__(handle)
 
 
 class LdapClientProviderCharmEvents(CharmEvents):
@@ -208,11 +178,7 @@ class LdapClientProvides(Object):
         self.integration_name = integration_name
 
     def _get_hostname(self) -> str:
-        """Get GLAuth hostname.
-
-        Returns:
-            GLAuth hostname.
-        """
+        """Get GLAuth hostname."""
         hostname = subprocess.run(
             ["cat", "/etc/hostname"], capture_output=True, text=True
         ).stdout.strip()
@@ -241,6 +207,7 @@ class LdapClientProvides(Object):
         - glauth snap event: When the glauth certificate, config, and key are available.
         """
         self.charm.unit.status = MaintenanceStatus("reconfiguring glauth")
+
         # Check model for GLAuth config resource
         try:
             resource_path = self.model.resources.fetch("config")
@@ -250,30 +217,36 @@ class LdapClientProvides(Object):
             self.on.config_data_unavailable.emit(
                 api_port=self.model.config["api-port"], ldap_port=self.model.config["ldap-port"]
             )
+
         # Set config and get LDAP URI
         ldap_uri = self.set_config(
             resource_path, self.model.config["ldap-port"], self.model.config["api-port"]
         )
+
         # Get CA Cert and key
         ca_cert = self.load()
+
         # Signals glauth snap is ready to be started
         self.on.glauth_snap_ready.emit()
         cc_content = {"ca-cert": ca_cert}
+
         # Get Peer Secrets
         ldap_relation = self.model.get_relation("glauth")
         default_bind_dn = ldap_relation.data[self.charm.app]["ldap-default-bind-dn"]
         ldap_password = ldap_relation.data[self.charm.app]["ldap-password"]
         ldbd_secret = self.model.get_secret(id=default_bind_dn)
         lp_secret = self.model.get_secret(id=ldap_password)
+
         # Create Secrets
         cc_secret = self.charm.app.add_secret(cc_content, label="ca-cert")
-        logger.debug("created secret %s", cc_secret)
+        logger.debug("created secret ca-cert")
         cc_secret.grant(event.relation)
         ldbd_secret.grant(event.relation)
         lp_secret.grant(event.relation)
         event.relation.data[self.charm.app]["ca-cert"] = cc_secret.id
         event.relation.data[self.charm.app]["ldap-default-bind-dn"] = ldbd_secret.id
         event.relation.data[self.charm.app]["ldap-password"] = lp_secret.id
+
         # Configuration data update
         ldap_relation = self.model.get_relation("ldap-client")
         ldap_relation.data[self.charm.app].update(
@@ -288,16 +261,29 @@ class LdapClientProvides(Object):
         """Load ca-certificate from glauth snap.
 
         Returns:
-            The ca certificate content.
+            str: The ca certificate content.
         """
         cert = "/var/snap/glauth/common/etc/glauth/certs.d/glauth.crt"
         key = "/var/snap/glauth/common/etc/glauth/keys.d/glauth.key"
         if not pathlib.Path(cert).exists() and not pathlib.Path(key).exists():
             # If cert and key do not exist, create both
             subprocess.run(
-                shlex.split(
-                    f'openssl req -x509 -newkey rsa:4096 -keyout {key} -out {cert} -days 365 -nodes -subj "/CN={self._get_hostname()}"'
-                )
+                [
+                    "openssl",
+                    "req",
+                    "-x509",
+                    "-newkey",
+                    "rsa:4096",
+                    "-keyout",
+                    f"{key}",
+                    "-out",
+                    f"{cert}",
+                    "-days",
+                    "365",
+                    "-nodes",
+                    "-subj",
+                    f"/CN={self._get_hostname()}",
+                ]
             )
         content = open(cert, "r").read()
         return content
@@ -312,7 +298,7 @@ class LdapClientProvides(Object):
 
 
         Returns:
-            LDAP URI.
+            str: LDAP URI.
         """
         ldap_uri = "ldap"
         # Create default config with no users if resource glauth.cfg not found
@@ -390,6 +376,6 @@ class LdapClientRequires(Object):
                 ldbd_content=ldbd_content["ldap-default-bind-dn"],
                 lp_content=lp_content["ldap-password"],
             )
+            self.on.ldap_ready.emit()
         else:
             logger.error("sssd-ldap relation-changed data not found: ca-cert and sssd-conf.")
-        self.on.ldap_ready.emit()
