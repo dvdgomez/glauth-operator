@@ -8,7 +8,7 @@ import logging
 
 import glauth
 from charms.operator_libs_linux.v1 import snap
-from ldapclient_lib import ConfigDataUnavailableEvent, GlauthSnapReadyEvent, LdapClientProvides
+from ldapclient_lib import ConfigDataUnavailableEvent, LdapClientProvides, LdapReadyEvent
 from ops.charm import CharmBase
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus
@@ -35,8 +35,8 @@ class GlauthCharm(CharmBase):
             self._on_config_data_unavailable,
         )
         self.framework.observe(
-            self._ldapclient.on.glauth_snap_ready,
-            self._on_glauth_snap_ready,
+            self._ldapclient.on.ldap_ready,
+            self._on_ldap_ready,
         )
 
     def _install(self, _):
@@ -54,21 +54,28 @@ class GlauthCharm(CharmBase):
         # If config data is unavailable, set default config
         glauth.create_default_config(api_port=event.api_port, ldap_port=event.ldap_port)
 
-    def _on_glauth_snap_ready(self, event: GlauthSnapReadyEvent) -> None:
-        """Handle glauth-snap-ready event."""
+    def _on_ldap_ready(self, event: LdapReadyEvent) -> None:
+        """Handle ldap-ready event."""
         glauth.start()
         self.unit.status = ActiveStatus("glauth active")
 
     def _on_set_confidential_action(self, event):
         """Handle the set-confidential action."""
+        if event.params["ca-cert"]:
+            cc_content = {"ca-cert": event.params["ca-cert"]}
+        else:
+            cc_content = {"ca-cert": glauth.load()}
         ldbd_content = {"ldap-default-bind-dn": event.params["ldap-default-bind-dn"]}
         lp_content = {"ldap-password": event.params["ldap-password"]}
+        cc_secret = self.app.add_secret(cc_content, label="ca-cert")
+        logger.debug("created secret ca-cert")
         ldbd_secret = self.app.add_secret(ldbd_content, label="ldap-default-bind-dn")
         logger.debug("created secret ldap-default-bind-dn")
         lp_secret = self.app.add_secret(lp_content, label="ldap-password")
         logger.debug("created secret ldap-password")
         # Get peer integration to store secrets
         ldap_relation = self.model.get_relation("glauth")
+        ldap_relation.data[self.app]["ca-cert"] = cc_secret.id
         ldap_relation.data[self.app]["ldap-default-bind-dn"] = ldbd_secret.id
         ldap_relation.data[self.app]["ldap-password"] = lp_secret.id
 

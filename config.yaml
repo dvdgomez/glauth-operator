@@ -14,3 +14,7 @@ options:
     description: Default base DN for ldap operations.
     type: string
     default:
+  tls:
+    description:
+    type: boolean
+    default: false

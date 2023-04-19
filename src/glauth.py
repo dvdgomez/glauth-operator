@@ -6,6 +6,7 @@
 
 import logging
 import pathlib
+import socket
 import subprocess
 
 from charms.operator_libs_linux.v1 import snap
@@ -54,6 +55,38 @@ def install() -> None:
         logger.error("could not install glauth. Reason: %s", e.message)
         logger.debug(e, exc_info=True)
         raise e
+
+
+def load() -> str:
+    """Load ca-certificate from glauth snap.
+
+    Returns:
+        str: The ca certificate content.
+    """
+    cert = "/var/snap/glauth/common/etc/glauth/certs.d/glauth.crt"
+    key = "/var/snap/glauth/common/etc/glauth/keys.d/glauth.key"
+    if not pathlib.Path(cert).exists() and not pathlib.Path(key).exists():
+        # If cert and key do not exist, create both
+        subprocess.run(
+            [
+                "openssl",
+                "req",
+                "-x509",
+                "-newkey",
+                "rsa:4096",
+                "-keyout",
+                f"{key}",
+                "-out",
+                f"{cert}",
+                "-days",
+                "365",
+                "-nodes",
+                "-subj",
+                f"/CN={socket.gethostname()}",
+            ]
+        )
+    content = open(cert, "r").read()
+    return content
 
 
 def refresh() -> None:

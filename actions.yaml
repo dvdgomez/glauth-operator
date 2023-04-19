@@ -5,6 +5,9 @@ set-confidential:
   description: |
     Set confidential user information for GLAuth configuration.
   params:
+    ca-cert:
+      type: string
+      description: CA certificate.
     ldap-password:
       type: string
       description: The LDAP password.
