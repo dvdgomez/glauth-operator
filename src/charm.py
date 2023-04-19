@@ -61,7 +61,7 @@ class GlauthCharm(CharmBase):
 
     def _on_set_confidential_action(self, event):
         """Handle the set-confidential action."""
-        if event.params["ca-cert"]:
+        if "ca-cert" in event.params:
             cc_content = {"ca-cert": event.params["ca-cert"]}
         else:
             cc_content = {"ca-cert": glauth.load()}
