@@ -25,11 +25,11 @@ def active() -> bool:
     return bool(_snap().services["daemon"]["active"])
 
 
-def create_default_config(api_port: int, ldap_port: int) -> None:
+def create_default_config(api_port: int) -> None:
     """Create default config with no users."""
     template = Template(pathlib.Path("templates/glauth.toml.j2").read_text())
 
-    rendered = template.render(api_port=api_port, ldap_port=ldap_port)
+    rendered = template.render(api_port=api_port, ldap_port=363)
     pathlib.Path("/var/snap/glauth/common/etc/glauth/glauth.d/glauth.cfg").write_text(rendered)
 
 

@@ -52,7 +52,7 @@ class GlauthCharm(CharmBase):
     def _on_config_data_unavailable(self, event: ConfigDataUnavailableEvent) -> None:
         """Handle config-data-unavailable event."""
         # If config data is unavailable, set default config
-        glauth.create_default_config(api_port=event.api_port, ldap_port=event.ldap_port)
+        glauth.create_default_config(api_port=event.api_port)
 
     def _on_ldap_ready(self, event: LdapReadyEvent) -> None:
         """Handle ldap-ready event."""
