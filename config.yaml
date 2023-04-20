@@ -17,4 +17,4 @@ options:
   tls:
     description:
     type: boolean
-    default: false
+    default: true
