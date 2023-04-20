@@ -9,7 +9,7 @@ options:
   ldap-port:
     description: Default LDAP port for glauth config.
     type: int
-    default: 3893
+    default: 3894
   ldap-search-base:
     description: Default base DN for ldap operations.
     type: string

@@ -60,7 +60,7 @@ def load() -> str:
     key = "/var/snap/glauth/common/etc/glauth/keys.d/glauth.key"
     if not pathlib.Path(cert).exists() and not pathlib.Path(key).exists():
         # If cert and key do not exist, create both
-        subprocess.run(
+        subprocess.call(
             [
                 "openssl",
                 "req",
@@ -76,7 +76,9 @@ def load() -> str:
                 "-nodes",
                 "-subj",
                 f"/CN={socket.gethostname()}",
-            ]
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
         )
     content = open(cert, "r").read()
     return content
