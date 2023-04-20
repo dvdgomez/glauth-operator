@@ -15,26 +15,14 @@ from jinja2 import Template
 logger = logging.getLogger(__name__)
 
 
-def __getattr__(prop: str):
-    if prop == "active":
-        return bool(_snap().services["daemon"]["active"])
-    elif prop == "installed":
-        return _snap().present
-    elif prop == "version":
-        if _snap().present:
-            # Version separated by newlines includes version, build time and commit hash
-            # split by newlines, grab first line, grab second string for version
-            full_version = subprocess.run(
-                ["snap", "list", "glauth"], stdout=subprocess.PIPE, text=True
-            ).stdout.splitlines()[1]
-            return full_version.split()[2]
-        raise snap.SnapError("glauth snap not installed, cannot fetch version")
-    raise AttributeError(f"Module {__name__!r} has no property {prop!r}")
-
-
 def _snap():
     cache = snap.SnapCache()
     return cache["glauth"]
+
+
+def active() -> bool:
+    """Return if GLAuth is active or not."""
+    return bool(_snap().services["daemon"]["active"])
 
 
 def create_default_config(api_port: int, ldap_port: int) -> None:
@@ -55,6 +43,11 @@ def install() -> None:
         logger.error("could not install glauth. Reason: %s", e.message)
         logger.debug(e, exc_info=True)
         raise e
+
+
+def installed() -> bool:
+    """Return if GLAuth is installed or not."""
+    return _snap().present
 
 
 def load() -> str:
@@ -103,3 +96,15 @@ def remove() -> None:
 def start() -> None:
     """Start the glauth snap."""
     _snap().start(enable=True)
+
+
+def version() -> str:
+    """Return GLAuth version."""
+    if _snap().present:
+        # Version separated by newlines includes version, build time and commit hash
+        # split by newlines, grab first line, grab second string for version
+        full_version = subprocess.run(
+            ["snap", "list", "glauth"], stdout=subprocess.PIPE, text=True
+        ).stdout.splitlines()[1]
+        return full_version.split()[2]
+    raise snap.SnapError("glauth snap not installed, cannot fetch version")

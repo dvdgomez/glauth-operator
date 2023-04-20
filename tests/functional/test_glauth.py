@@ -15,10 +15,10 @@ class TestGlauth(unittest.TestCase):
     def setUp(self) -> None:
         """Install glauth snap."""
         self.glauth = glauth
-        if not self.glauth.installed:
+        if not self.glauth.installed():
             self.glauth.install()
 
     def test_install(self):
         """Validate snap install."""
-        self.assertTrue(glauth.installed)
-        self.assertTrue(type(glauth.version), str)
+        self.assertTrue(glauth.installed())
+        self.assertTrue(type(glauth.version()), str)

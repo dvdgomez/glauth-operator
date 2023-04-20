@@ -44,8 +44,8 @@ class GlauthCharm(CharmBase):
         self.unit.status = MaintenanceStatus("installing glauth")
         try:
             glauth.install()
-            self.unit.set_workload_version(glauth.version)
-            self.unit.status = ActiveStatus("glauth ready")
+            self.unit.set_workload_version(glauth.version())
+            self.unit.status = ActiveStatus()
         except snap.SnapError as e:
             self.unit.status = BlockedStatus(e.message)
 
@@ -57,7 +57,7 @@ class GlauthCharm(CharmBase):
     def _on_ldap_ready(self, event: LdapReadyEvent) -> None:
         """Handle ldap-ready event."""
         glauth.start()
-        self.unit.status = ActiveStatus("glauth active")
+        self.unit.status = ActiveStatus()
 
     def _on_set_confidential_action(self, event):
         """Handle the set-confidential action."""
@@ -87,7 +87,7 @@ class GlauthCharm(CharmBase):
     def _update_status(self, _):
         """Update status."""
         snap.hold_refresh()
-        self.unit.set_workload_version(glauth.version)
+        self.unit.set_workload_version(glauth.version())
 
     def _upgrade_charm(self, _):
         """Ensure the snap is refreshed (in channel) if there are new revisions."""

@@ -21,10 +21,10 @@ class TestCharm(unittest.TestCase):
         self.addCleanup(self.harness.cleanup)
         self.harness.begin()
 
-    @patch("glauth.__getattr__", return_value="v1.0.0")
-    @patch("glauth.__getattr__", return_value=True)
+    @patch("glauth.version", return_value="v1.0.0")
+    @patch("glauth.installed", return_value=True)
     @patch("glauth.install")
     def test_install(self, *_) -> None:
         """Test install behavior."""
         self.harness.charm.on.install.emit()
-        self.assertEqual(self.harness.charm.unit.status, ActiveStatus("glauth ready"))
+        self.assertEqual(self.harness.charm.unit.status, ActiveStatus())
